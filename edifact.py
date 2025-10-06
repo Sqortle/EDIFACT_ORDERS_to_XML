@@ -1,7 +1,8 @@
 import xml.etree.ElementTree as ET
 
+# EDIFACT mesajı
 edifact_message = """
-EDIFACT ORDERS MESSAGE Example
+ordermessage
 """
 
 segments = [line.strip() for line in edifact_message.split("'") if line.strip()]
@@ -16,22 +17,20 @@ DOCK_CODE = "0000000003602"
 
 current_article_line = None
 
-ET.SubElement(schedule, "SUPP_SCHED_TYPE").text = "PLAN"
+ET.SubElement(schedule, "SUPP_SCHED_TYPE").text = "ORDERS"
 
 ean_code = None
 pia_bp = None
 description = None
 qty = None
 price = None
+schedule_no = "1"
 
 for seg in segments:
     parts = seg.split("+")
     tag = parts[0]
 
-    if tag == "UNB":
-        ET.SubElement(schedule, "SUPP_SCHED_TYPE").text = parts[2].split(":")[0]
-
-    elif tag == "NAD":
+    if tag == "NAD":
         party_qualifier = parts[1]
         party_id = parts[2].split(":")[0]
         if party_qualifier == "SU":
@@ -58,14 +57,13 @@ for seg in segments:
             
 
     elif tag == "ALI":
-        print("in ALI")
+        print("ALI segmentinde")
 
     elif tag == "RFF":
         ET.SubElement(schedule, "SUPPLIER_REF").text = parts[1].split(":")[1]
 
     elif tag == "LIN":
         ean_code = parts[3].split(":")[0]
-        
         ET.SubElement(schedule, "EAN_LOCATION").text = EAN_LOCATION
 
     elif tag == "PIA":
@@ -96,7 +94,7 @@ for seg in segments:
 article_lines = ET.SubElement(schedule, "ARTICLE_LINES")
 current_article_line = ET.SubElement(article_lines, "ARTICLE_LINE")
 ET.SubElement(current_article_line, "CALL_OFF_NO").text = schedule.find("MESSAGE_ID").text
-ET.SubElement(current_article_line, "SCHEDULE_NO").text = "1"
+ET.SubElement(current_article_line, "SCHEDULE_NO").text = schedule_no
 ET.SubElement(current_article_line, "LAST_RECEIPT_DATE").text = schedule.find("VALID_UNTIL").text
 ET.SubElement(current_article_line, "EAN_CODE").text = ean_code
 ET.SubElement(current_article_line, "PART_NO").text = pia_bp
@@ -109,6 +107,7 @@ current_demand_line = ET.SubElement(demand_lines_el, "SCHEDULE_LINE")
 ET.SubElement(current_demand_line, "PART_NO").text = current_article_line.find("PART_NO").text
 ET.SubElement(current_demand_line, "LINE_TYPE_ID").text = "1"
 ET.SubElement(current_demand_line, "DOCK_CODE").text = DOCK_CODE
+ET.SubElement(current_demand_line, "SCHEDULE_NO").text = schedule_no
 ET.SubElement(current_demand_line, "QUANTITY_DUE").text = current_article_line.find("LAST_RECEIPT_QTY").text
 ET.SubElement(current_demand_line, "DELIVERY_DUE_DATE").text = schedule.find("VALID_UNTIL").text
 ET.SubElement(current_demand_line, "CUSTOMER_PO_NO").text = schedule.find("MESSAGE_ID").text
@@ -133,4 +132,4 @@ indent(root)
 tree = ET.ElementTree(root)
 tree.write("Documents/output.xml", encoding="ISO-8859-1", xml_declaration=True)
 
-print("Successful!")
+print("XML dosyası başarıyla oluşturuldu: output.xml")
