@@ -2,7 +2,7 @@ import xml.etree.ElementTree as ET
 
 # EDIFACT mesajı
 edifact_message = """
-ordermessage
+ORDERS MESSAGE
 """
 
 segments = [line.strip() for line in edifact_message.split("'") if line.strip()]
@@ -10,10 +10,6 @@ segments = [line.strip() for line in edifact_message.split("'") if line.strip()]
 root = ET.Element("SCHEDULES")
 schedules_el = ET.SubElement(root, "SCHEDULES")
 schedule = ET.SubElement(schedules_el, "SCHEDULE")
-
-
-EAN_LOCATION = "0000000003602"
-DOCK_CODE = "0000000003602"
 
 current_article_line = None
 
@@ -39,6 +35,7 @@ for seg in segments:
             ET.SubElement(schedule, "BUYER_NO").text = party_id
         elif party_qualifier == "DP":
             ET.SubElement(schedule, "DELIVERY_PARTY_NO").text = party_id
+            ET.SubElement(schedule, "EAN_LOCATION").text = parts[2].split(":")[0]
         elif party_qualifier == "IV":
             ET.SubElement(schedule, "INVOICE_PARTY_NO").text = party_id
 
@@ -64,7 +61,6 @@ for seg in segments:
 
     elif tag == "LIN":
         ean_code = parts[3].split(":")[0]
-        ET.SubElement(schedule, "EAN_LOCATION").text = EAN_LOCATION
 
     elif tag == "PIA":
         if parts[2].split(":")[1] == "BP":
@@ -106,7 +102,7 @@ demand_lines_el = ET.SubElement(schedule, "DEMAND_LINES")
 current_demand_line = ET.SubElement(demand_lines_el, "SCHEDULE_LINE")
 ET.SubElement(current_demand_line, "PART_NO").text = current_article_line.find("PART_NO").text
 ET.SubElement(current_demand_line, "LINE_TYPE_ID").text = "1"
-ET.SubElement(current_demand_line, "DOCK_CODE").text = DOCK_CODE
+ET.SubElement(current_demand_line, "DOCK_CODE").text = schedule.find("EAN_LOCATION").text
 ET.SubElement(current_demand_line, "SCHEDULE_NO").text = schedule_no
 ET.SubElement(current_demand_line, "QUANTITY_DUE").text = current_article_line.find("LAST_RECEIPT_QTY").text
 ET.SubElement(current_demand_line, "DELIVERY_DUE_DATE").text = schedule.find("VALID_UNTIL").text
