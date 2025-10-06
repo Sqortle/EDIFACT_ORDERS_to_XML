@@ -2,7 +2,7 @@ import xml.etree.ElementTree as ET
 
 # EDIFACT mesajı
 edifact_message = """
-EDIFACT ORDERS Message example.
+EDIFACT ORDERS MESSAGE Example
 """
 
 # Segmentleri ayır
@@ -20,6 +20,14 @@ DOCK_CODE = "0000000003602"
 
 # ARTICLE_LINE için değişken
 current_article_line = None
+
+ET.SubElement(schedule, "SUPP_SCHED_TYPE").text = "PLAN"
+
+ean_code = None
+pia_bp = None
+description = None
+qty = None
+price = None
 
 for seg in segments:
     parts = seg.split("+")
@@ -42,9 +50,7 @@ for seg in segments:
 
     elif tag == "BGM":
         ET.SubElement(schedule, "MESSAGE_ID").text = parts[2]
-        article_lines = ET.SubElement(schedule, "ARTICLE_LINES")
-        current_article_line = ET.SubElement(article_lines, "ARTICLE_LINE")
-        ET.SubElement(current_article_line, "CALL_OFF_NO").text = parts[2]
+  
 
     elif tag == "DTM":
         date_qualifier = parts[1].split(":")[0]
@@ -54,7 +60,7 @@ for seg in segments:
             ET.SubElement(schedule, "VALID_FROM").text = formatted_date
         elif date_qualifier == "2":
             ET.SubElement(schedule, "VALID_UNTIL").text = formatted_date
-            ET.SubElement(current_article_line, "LAST_RECEIPT_DATE").text = formatted_date
+            
 
     elif tag == "ALI":
         print("ALI segmentinde")
@@ -64,16 +70,16 @@ for seg in segments:
 
     elif tag == "LIN":
         ean_code = parts[3].split(":")[0]
-        ET.SubElement(current_article_line, "EAN_CODE").text = ean_code
+        
         ET.SubElement(schedule, "EAN_LOCATION").text = EAN_LOCATION
 
     elif tag == "PIA":
         if parts[2].split(":")[1] == "BP":
-            ET.SubElement(current_article_line, "PART_NO").text = parts[2].split(":")[0]
+            pia_bp = parts[2].split(":")[0]
 
     elif tag == "IMD":
         description = parts[3].replace(":::", "")
-        ET.SubElement(current_article_line, "DESCRIPTION").text = description
+        
 
     elif tag == "QTY":
         try:
@@ -81,7 +87,7 @@ for seg in segments:
             print("quantity atandı")
         except IndexError:
             qty = "0"
-        ET.SubElement(current_article_line, "LAST_RECEIPT_QTY").text = qty
+        
 
     elif tag == "PRI":
         try:
@@ -89,7 +95,19 @@ for seg in segments:
             print("price atandı")
         except IndexError:
             price = "0"
-        ET.SubElement(current_article_line, "UNIT_PRICE").text = price
+        
+
+
+article_lines = ET.SubElement(schedule, "ARTICLE_LINES")
+current_article_line = ET.SubElement(article_lines, "ARTICLE_LINE")
+ET.SubElement(current_article_line, "CALL_OFF_NO").text = schedule.find("MESSAGE_ID").text
+ET.SubElement(current_article_line, "SCHEDULE_NO").text = "1"
+ET.SubElement(current_article_line, "LAST_RECEIPT_DATE").text = schedule.find("VALID_UNTIL").text
+ET.SubElement(current_article_line, "EAN_CODE").text = ean_code
+ET.SubElement(current_article_line, "PART_NO").text = pia_bp
+ET.SubElement(current_article_line, "DESCRIPTION").text = description
+ET.SubElement(current_article_line, "LAST_RECEIPT_QTY").text = qty
+ET.SubElement(current_article_line, "UNIT_PRICE").text = price
 
 # DEMAND_LINES
 demand_lines_el = ET.SubElement(schedule, "DEMAND_LINES")
@@ -101,11 +119,6 @@ ET.SubElement(current_demand_line, "QUANTITY_DUE").text = current_article_line.f
 ET.SubElement(current_demand_line, "DELIVERY_DUE_DATE").text = schedule.find("VALID_UNTIL").text
 ET.SubElement(current_demand_line, "CUSTOMER_PO_NO").text = schedule.find("MESSAGE_ID").text
 ET.SubElement(current_demand_line, "TO_DATE").text = schedule.find("VALID_UNTIL").text
-
-ET.SubElement(current_article_line, "SCHEDULE_NO").text = "1"
-
-ET.SubElement(schedule, "SUPP_SCHED_TYPE").text = "PLAN"
-
 
 
 # XML yazma (pretty print için)
