@@ -1,24 +1,19 @@
 import xml.etree.ElementTree as ET
 
-# EDIFACT mesajı
 edifact_message = """
 EDIFACT ORDERS MESSAGE Example
 """
 
-# Segmentleri ayır
 segments = [line.strip() for line in edifact_message.split("'") if line.strip()]
 
-# XML root ve schedule oluştur
 root = ET.Element("SCHEDULES")
 schedules_el = ET.SubElement(root, "SCHEDULES")
 schedule = ET.SubElement(schedules_el, "SCHEDULE")
 
 
-# Sabit değerler
 EAN_LOCATION = "0000000003602"
 DOCK_CODE = "0000000003602"
 
-# ARTICLE_LINE için değişken
 current_article_line = None
 
 ET.SubElement(schedule, "SUPP_SCHED_TYPE").text = "PLAN"
@@ -63,7 +58,7 @@ for seg in segments:
             
 
     elif tag == "ALI":
-        print("ALI segmentinde")
+        print("in ALI")
 
     elif tag == "RFF":
         ET.SubElement(schedule, "SUPPLIER_REF").text = parts[1].split(":")[1]
@@ -109,7 +104,6 @@ ET.SubElement(current_article_line, "DESCRIPTION").text = description
 ET.SubElement(current_article_line, "LAST_RECEIPT_QTY").text = qty
 ET.SubElement(current_article_line, "UNIT_PRICE").text = price
 
-# DEMAND_LINES
 demand_lines_el = ET.SubElement(schedule, "DEMAND_LINES")
 current_demand_line = ET.SubElement(demand_lines_el, "SCHEDULE_LINE")
 ET.SubElement(current_demand_line, "PART_NO").text = current_article_line.find("PART_NO").text
@@ -121,7 +115,6 @@ ET.SubElement(current_demand_line, "CUSTOMER_PO_NO").text = schedule.find("MESSA
 ET.SubElement(current_demand_line, "TO_DATE").text = schedule.find("VALID_UNTIL").text
 
 
-# XML yazma (pretty print için)
 def indent(elem, level=0):
     i = "\n" + level*"  "
     if len(elem):
@@ -140,4 +133,4 @@ indent(root)
 tree = ET.ElementTree(root)
 tree.write("Documents/output.xml", encoding="ISO-8859-1", xml_declaration=True)
 
-print("XML dosyası başarıyla oluşturuldu: output.xml")
+print("Successful!")
